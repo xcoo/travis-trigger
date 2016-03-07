@@ -36,16 +36,36 @@ fi
 
 TRAVIS_TOKEN=`openssl rsautl -decrypt -inkey ~/.ssh/id_rsa -in $TOKEN_DIR/travis_token`
 
+if [ ! "$?" -eq 0 ]; then
+    echo 'Error: unable to read '$TOKEN_DIR'/traivs_token'
+    exit 1
+fi
+
+echo 'Access to API...'
 BODY='{
 "request": {
   "branch":"'$TRAVIS_BRANCH'"
 }}'
+RESULT=`curl -s -X POST \
+        -H "Content-Type: application/json" \
+        -H "Accept: application/json" \
+        -H "Travis-API-Version: 3" \
+        -H "Authorization: token $TRAVIS_TOKEN" \
+        -d "$BODY" \
+        https://api.travis-ci.org/repo/$TRAVIS_USER%2F$TRAVIS_REPO/requests`
 
-curl -s -X POST \
-  -H "Content-Type: application/json" \
-  -H "Accept: application/json" \
-  -H "Travis-API-Version: 3" \
-  -H "Authorization: token $TRAVIS_TOKEN" \
-  -d "$BODY" \
-  https://api.travis-ci.org/repo/$TRAVIS_USER%2F$TRAVIS_REPO/requests \
-  >> $LOG_DIR/travis_trigger.log
+if [ ! "$?" -eq 0 ]; then
+    echo 'Error: unable to access to API.'
+    exit 1
+fi
+
+echo "$RESULT" >> $LOG_DIR/travis_trigger.log
+
+if echo $RESULT | grep 'error' > /dev/null; then
+    ERROR_MSG=`echo "$RESULT" | grep 'error_message'`
+    echo 'Error:'$ERROR_MSG
+    exit 1
+else
+    echo 'Done.'
+    exit 0
+fi

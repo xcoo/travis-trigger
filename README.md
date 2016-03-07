@@ -25,14 +25,12 @@ Click "Generate token" and copy the token to your clipboard.
 ## Get Travis CI Access Token
 
 ```
-chmod +x get_travis_token.sh
 ./get_travis_token.sh
 ```
 
 ## Run Travis Trigger
 
 ```
-chmod +x travis_trigger.sh
 ./travis_trigger.sh -u user -r repository -b branch
 ```
 
