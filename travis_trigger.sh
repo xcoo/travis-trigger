@@ -16,17 +16,17 @@ do
             ;;
         b)  TRAVIS_BRANCH=$OPTARG
             ;;
-        h)  echo $USAGE_MSG 1>&2
+        h)  echo "$USAGE_MSG" >&2
             exit 0
             ;;
-        *)  echo $USAGE_MSG 1>&2
+        *)  echo "$USAGE_MSG" >&2
             exit 1
             ;;
     esac
 done
 
 if [ "$TRAVIS_USER" = "" -o "$TRAVIS_REPO" = "" ]; then
-    echo $USAGE_MSG 1>&2
+    echo "$USAGE_MSG" >&2
     exit 1
 fi
 
@@ -36,16 +36,16 @@ fi
 
 TRAVIS_TOKEN=`openssl rsautl -decrypt -inkey ~/.ssh/id_rsa -in $TOKEN_DIR/travis_token`
 
-if [ ! "$?" -eq 0 ]; then
-    echo 'Error: unable to read '$TOKEN_DIR'/traivs_token'
+if [ $? -ne 0 ]; then
+    echo "Error: unable to read $TOKEN_DIR/traivs_token" >&2
     exit 1
 fi
 
-echo 'Access to API...'
-BODY='{
-"request": {
-  "branch":"'$TRAVIS_BRANCH'"
-}}'
+echo "Access to API..."
+BODY="{
+\"request\": {
+  \"branch\":\"$TRAVIS_BRANCH\"
+}}"
 RESULT=`curl -s -X POST \
         -H "Content-Type: application/json" \
         -H "Accept: application/json" \
@@ -54,18 +54,18 @@ RESULT=`curl -s -X POST \
         -d "$BODY" \
         https://api.travis-ci.org/repo/$TRAVIS_USER%2F$TRAVIS_REPO/requests`
 
-if [ ! "$?" -eq 0 ]; then
-    echo 'Error: unable to access to API.'
+if [ $? -ne 0 ]; then
+    echo "Error: unable to access to API." >&2
     exit 1
 fi
 
 echo "$RESULT" >> $LOG_DIR/travis_trigger.log
 
-if echo $RESULT | grep 'error' > /dev/null; then
-    ERROR_MSG=`echo "$RESULT" | grep 'error_message'`
-    echo 'Error:'$ERROR_MSG
+if [[ "$RESULT" =~ error ]]; then
+    ERROR_MSG=`echo "$RESULT" | grep "error_message"`
+    echo "Error: $ERROR_MSG" >&2
     exit 1
 else
-    echo 'Done.'
+    echo "Done."
     exit 0
 fi
